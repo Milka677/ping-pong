@@ -2,13 +2,16 @@ from pygame import *
 import socket
 import json
 from threading import Thread
+from milka import Menu
 
 # ---ПУГАМЕ НАЛАШТУВАННЯ ---
 WIDTH, HEIGHT = 800, 600
 init()
 screen = display.set_mode((WIDTH, HEIGHT))
+menu = Menu(screen, WIDTH, HEIGHT)
 clock = time.Clock()
 display.set_caption("Пінг-Понг")
+state = "menu"
 # ---СЕРВЕР ---
 def connect_to_server():
     while True:
@@ -50,10 +53,21 @@ winner = None
 you_winner = None
 my_id, game_state, buffer, client = connect_to_server()
 Thread(target=receive, daemon=True).start()
-while True:
+while state != "exit":
     for e in event.get():
         if e.type == QUIT:
-            exit()
+            state = "exit"
+        if state == "menu":
+            result = menu.handl_event(e)
+        if result == "exit":
+            state = "exit"
+        elif result == "start":
+            state = "start"
+    if state == "menu":
+        menu.draw()
+        display.update()
+        clock.tick(60)
+        continue
 
     if "countdown" in game_state and game_state["countdown"] > 0:
         screen.fill((0, 0, 0))
@@ -111,7 +125,12 @@ while True:
     clock.tick(60)
 
     keys = key.get_pressed()
-    if keys[K_w]:
-        client.send(b"UP")
-    elif keys[K_s]:
-        client.send(b"DOWN")
+    if state == "game":
+        if keys[K_w]:
+            client.send(b"UP")
+        elif keys[K_s]:
+            client.send(b"DOWN")
+
+
+
+
